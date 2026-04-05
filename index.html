@@ -424,7 +424,7 @@
 
     const today = new Date();
     let currentMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-    let selectedDates = [toISODate(today)];
+    let selectedDates = [];
     let rooms = normalizeRooms(loadRooms());
     let bookings = normalizeBookings(loadBookings());
 
@@ -662,7 +662,6 @@
       } else {
         selectedDates = uniqSortedDates([...selectedDates, iso]);
       }
-      if (!selectedDates.length) selectedDates = [iso];
       renderCalendar();
       renderBookingsForSelectedDate();
     }
@@ -673,11 +672,13 @@
     }
 
     function renderBookingsForSelectedDate() {
-      selectedDateLabel.textContent = selectedDates.length === 1
-        ? formatDate(selectedDates[0])
-        : `Επιλεγμένες ημέρες: ${formatDateSelection(selectedDates)}`;
+      selectedDateLabel.textContent = !selectedDates.length
+        ? 'Δεν έχει επιλεγεί ημέρα'
+        : selectedDates.length === 1
+          ? formatDate(selectedDates[0])
+          : `Επιλεγμένες ημέρες: ${formatDateSelection(selectedDates)}`;
 
-      const relevantDates = selectedDates.length ? [selectedDates[0]] : [];
+      const relevantDates = selectedDates.length ? selectedDates : [];
       const dayBookings = bookings
         .filter(b => relevantDates.some(d => b.dates.includes(d)))
         .sort((a, b) => {
@@ -687,8 +688,13 @@
         });
 
       bookingList.innerHTML = '';
+      if (!selectedDates.length) {
+        bookingList.innerHTML = '<div class="empty">Δεν έχεις επιλέξει κάποια ημέρα.</div>';
+        return;
+      }
+
       if (!dayBookings.length) {
-        bookingList.innerHTML = '<div class="empty">Δεν υπάρχει κράτηση για την επιλεγμένη ημέρα.</div>';
+        bookingList.innerHTML = '<div class="empty">Δεν υπάρχει κράτηση για τις επιλεγμένες ημέρες.</div>';
         return;
       }
 
@@ -739,7 +745,7 @@
       clearConflict();
       bookingForm.reset();
       paymentStatus.value = 'Δεν εξοφλήθηκε';
-      selectedDates = [toISODate(today)];
+      selectedDates = [];
       currentMonth = new Date(today.getFullYear(), today.getMonth(), 1);
       roomSelect.dataset.pendingValue = rooms[0]?.id || '';
       renderMonthYearOptions();
