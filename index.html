@@ -1,46 +1,710 @@
-Εφαρμογή iPhone
-Κρατήσεις Δωματίων
-Μπορείς να βάζεις όσα δωμάτια θέλεις και να αλλάζεις όνομα και χρώμα για κάθε ένα.
-◀
+<!DOCTYPE html>
+<html lang="el">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#0f766e" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="Κρατήσεις" />
+  <title>Κρατήσεις Δωματίων</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="icon-192.png" />
+  <style>
+    :root {
+      --bg: #eef6f8;
+      --card: #ffffff;
+      --primary: #0f766e;
+      --primary-2: #1d4ed8;
+      --primary-dark: #115e59;
+      --accent: #f59e0b;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --danger: #dc2626;
+      --border: #d9e3ea;
+      --shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+      --radius: 22px;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: linear-gradient(180deg, #ecfeff 0%, var(--bg) 25%, var(--bg) 100%);
+      color: var(--text);
+    }
+    .app { max-width: 960px; margin: 0 auto; padding: env(safe-area-inset-top) 14px calc(env(safe-area-inset-right) + 14px) calc(env(safe-area-inset-bottom) + 18px) calc(env(safe-area-inset-left) + 14px); }
+    .header { padding: 12px 4px 14px; position: sticky; top: 0; z-index: 20; backdrop-filter: blur(10px); background: rgba(238,246,248,.9); }
+    .eyebrow { color: var(--muted); font-size: 13px; }
+    .title { font-size: 28px; font-weight: 900; margin-top: 6px; }
+    .subtitle { color: var(--muted); font-size: 15px; margin-top: 4px; }
+    .card {
+      background: var(--card);
+      border-radius: var(--radius);
+      padding: 16px;
+      box-shadow: var(--shadow);
+      border: 1px solid rgba(217,227,234,.8);
+      margin-bottom: 14px;
+    }
+    .split { display: grid; gap: 14px; }
+    @media (min-width: 900px) { .split { grid-template-columns: 1.1fr .9fr; align-items: start; } }
+    .month-nav { display: grid; grid-template-columns: 52px 1fr 52px; align-items: center; gap: 10px; margin-bottom: 14px; }
+    .month-nav button, .btn {
+      border: 0; border-radius: 16px; padding: 13px 14px; font-weight: 800; font-size: 15px;
+      background: var(--primary); color: white; cursor: pointer;
+    }
+    .month-nav button.secondary, .btn.secondary { background: #e6fffb; color: var(--primary-dark); border: 1px solid #bff4ec; }
+    .btn.small { padding: 10px 12px; font-size: 13px; }
+    .btn.danger { background: var(--danger); }
+    .btn.alt { background: #eaf2ff; color: #1d4ed8; border: 1px solid #bfd2ff; }
+    .month-label { text-align: center; font-size: 22px; font-weight: 900; }
+    .weekdays, .calendar { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; }
+    .weekdays div { text-align: center; color: var(--muted); font-weight: 800; padding-bottom: 6px; font-size: 13px; }
+    .day {
+      min-height: 88px; border-radius: 18px; border: 1px solid var(--border); background: white; cursor: pointer;
+      display: flex; align-items: center; justify-content: center; position: relative; padding: 8px 6px 14px;
+      text-align: center; transition: transform .08s ease;
+      overflow: hidden;
+    }
+    .day:active { transform: scale(.98); }
+    .day.muted { background: #f8fafc; color: #c0c8d0; }
+    .day.today { border: 3px solid var(--accent); }
+    .day.selected-range { background: rgba(15,118,110,.12); border-color: rgba(15,118,110,.35); }
+    .day-content { display: grid; place-items: center; line-height: 1.05; gap: 3px; width: 100%; position: relative; z-index: 2; }
+    .month-short { font-size: 11px; font-weight: 900; color: #374151; text-transform: uppercase; }
+    .date-num { font-size: 17px; font-weight: 900; color: #111827; position: relative; }
+    .weekday-short { font-size: 11px; font-weight: 800; color: #374151; }
+    .day.muted .month-short, .day.muted .date-num, .day.muted .weekday-short { color: #c0c8d0; }
+    .day.booked .date-num {
+      color: #111827;
+      text-decoration: line-through;
+      text-decoration-thickness: 2px;
+      text-decoration-color: rgba(17,24,39,.85);
+    }
+    .day.booked .month-short, .day.booked .weekday-short { color: #111827; }
 
-▶
-ΔΕ
-ΤΡ
-ΤΕ
-ΠΕ
-ΠΑ
-ΣΑ
-ΚΥ
-Δωμάτια
-Πρόσθεσε όσα δωμάτια θέλεις. Μπορείς να αλλάζεις το όνομα και το χρώμα τους όποτε θέλεις.
-Όνομα δωματίου
+    .booking-bars {
+      position: absolute; left: 6px; right: 6px; bottom: 6px; display: flex; gap: 3px; height: 6px; z-index: 1;
+    }
+    .booking-bar { flex: 1; border-radius: 999px; opacity: .95; }
+    .legend { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 14px; color: var(--muted); font-weight: 700; }
+    .legend-item { display: flex; align-items: center; gap: 8px; }
+    .dot { width: 16px; height: 16px; border-radius: 99px; border: 1px solid rgba(15,23,42,.08); }
+    .section-title { font-size: 20px; font-weight: 900; margin: 0 0 10px; }
+    .selected-date { font-size: 16px; font-weight: 900; color: var(--primary-dark); margin-bottom: 10px; }
+    .helper { color: var(--muted); font-size: 14px; margin-bottom: 10px; }
+    .form-grid { display: grid; gap: 12px; }
+    label { display: grid; gap: 6px; font-size: 14px; font-weight: 800; }
+    input, select, textarea {
+      width: 100%; border: 1px solid var(--border); border-radius: 16px; padding: 14px; background: white; color: var(--text); font-size: 16px;
+    }
+    input[type="color"] { padding: 6px; min-height: 48px; }
+    textarea { min-height: 90px; resize: vertical; }
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 4px; }
+    .booking-list, .room-list { display: grid; gap: 10px; }
+    .day-booking-title { font-size: 15px; font-weight: 900; color: var(--primary-dark); margin-bottom: 10px; }
+    .booking-item, .room-item { border: 1px solid var(--border); border-radius: 18px; padding: 14px; background: #fbffff; }
+    .booking-top, .room-top { display: flex; justify-content: space-between; align-items: start; gap: 10px; }
+    .booking-room, .room-name { font-size: 17px; font-weight: 900; }
+    .booking-name, .room-meta { color: var(--muted); font-size: 14px; }
+    .badge { border-radius: 999px; padding: 7px 11px; font-size: 12px; font-weight: 900; white-space: nowrap; color: #0f172a; }
+    .small-text { font-size: 13px; color: var(--muted); }
+    .empty { text-align: center; color: var(--muted); padding: 22px 10px; border-radius: 18px; border: 1px dashed var(--border); }
+    .footer-note { text-align: center; color: var(--muted); font-size: 12px; padding: 6px; }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="header">
+      <div class="eyebrow">Εφαρμογή iPhone</div>
+      <div class="title">Κρατήσεις Δωματίων</div>
+      <div class="subtitle">Μπορείς να βάζεις όσα δωμάτια θέλεις και να αλλάζεις όνομα και χρώμα για κάθε ένα.</div>
+    </div>
 
-Χρώμα
+    <div class="split">
+      <div>
+        <section class="card">
+          <div class="month-nav">
+            <button id="prevMonth" class="secondary">◀</button>
+            <div id="monthLabel" class="month-label"></div>
+            <button id="nextMonth" class="secondary">▶</button>
+          </div>
+          <div class="weekdays"><div>ΔΕ</div><div>ΤΡ</div><div>ΤΕ</div><div>ΠΕ</div><div>ΠΑ</div><div>ΣΑ</div><div>ΚΥ</div></div>
+          <div id="calendar" class="calendar"></div>
+          <div id="legend" class="legend"></div>
+        </section>
 
-Αποθήκευση δωματίου
-Καθαρισμός
-Νέα / Επεξεργασία κράτησης
+        <section class="card">
+          <div class="section-title">Δωμάτια</div>
+          <div class="helper">Πρόσθεσε όσα δωμάτια θέλεις. Μπορείς να αλλάζεις το όνομα και το χρώμα τους όποτε θέλεις.</div>
+          <form id="roomForm" class="form-grid">
+            <input type="hidden" id="roomId" />
+            <div class="two-col">
+              <label>Όνομα δωματίου
+                <input id="roomNameInput" type="text" placeholder="π.χ. Μικρό δωμάτιο" required />
+              </label>
+              <label>Χρώμα
+                <input id="roomColorInput" type="color" value="#2563eb" required />
+              </label>
+            </div>
+            <div class="actions">
+              <button class="btn alt small" type="submit">Αποθήκευση δωματίου</button>
+              <button class="btn secondary small" id="clearRoomBtn" type="button">Καθαρισμός</button>
+              <button class="btn danger small" id="deleteRoomBtn" type="button" style="display:none;">Διαγραφή</button>
+            </div>
+          </form>
+          <div id="roomList" class="room-list" style="margin-top:12px;"></div>
+        </section>
+      </div>
 
-Πάτησε την πρώτη και την τελευταία μέρα για να μαρκάρεις όλο το διάστημα της κράτησης.
-Δωμάτιο
+      <div>
+        <section class="card">
+          <div class="section-title">Νέα / Επεξεργασία κράτησης</div>
+          <div id="selectedDateLabel" class="selected-date"></div>
+          <div class="helper">Πάτησε την πρώτη και την τελευταία μέρα για να μαρκάρεις όλο το διάστημα της κράτησης.</div>
+          <form id="bookingForm" class="form-grid">
+            <input type="hidden" id="bookingId" />
+            <label>Δωμάτιο
+              <select id="room" required></select>
+            </label>
+            <label>Όνομα πελάτη
+              <input id="guest" type="text" placeholder="π.χ. Γιώργος Παπαδόπουλος" required />
+            </label>
+            <label>Τηλέφωνο
+              <input id="phone" type="tel" placeholder="π.χ. 69XXXXXXXX" />
+            </label>
+            <div class="two-col">
+              <label>Ώρα άφιξης
+                <input id="arrivalTime" type="time" />
+              </label>
+              <label>Ώρα αναχώρησης
+                <input id="departureTime" type="time" />
+              </label>
+            </div>
+            <div class="two-col">
+              <label>Τιμή κράτησης (€)
+                <input id="price" type="number" min="0" step="0.01" placeholder="0" />
+              </label>
+              <label>Προκαταβολή (€)
+                <input id="deposit" type="number" min="0" step="0.01" placeholder="0" />
+              </label>
+            </div>
+            <label>Κατάσταση εξόφλησης
+              <select id="paymentStatus">
+                <option value="Εκκρεμεί">Εκκρεμεί</option>
+                <option value="Μερική πληρωμή">Μερική πληρωμή</option>
+                <option value="Εξοφλημένο">Εξοφλημένο</option>
+              </select>
+            </label>
+            <label>Σχόλια
+              <textarea id="notes" placeholder="Σχόλια για την κράτηση"></textarea>
+            </label>
+            <div class="actions">
+              <button class="btn" type="submit">Αποθήκευση</button>
+              <button class="btn secondary" id="clearBtn" type="button">Καθαρισμός</button>
+              <button class="btn danger" id="deleteBtn" type="button" style="display:none;">Διαγραφή</button>
+            </div>
+          </form>
+        </section>
 
-Όνομα πελάτη
+        <section class="card">
+          <div class="section-title">Κρατήσεις ημέρας</div>
+          <div id="dayBookingTitle" class="day-booking-title"></div>
+          <div id="dayBookingList" class="booking-list"></div>
+        </section>
 
-Τηλέφωνο
+        <section class="card">
+          <div class="section-title">Όλες οι κρατήσεις</div>
+          <div id="bookingList" class="booking-list"></div>
+        </section>
+      </div>
+    </div>
 
-Ώρα άφιξης Ώρα αναχώρησης Τιμή κράτησης (€)
+    <div class="footer-note">Τα δεδομένα αποθηκεύονται στη συσκευή σου.</div>
+  </div>
 
-Προκαταβολή (€)
+<script>
+const BOOKING_STORAGE_KEY = 'eleon-bookings-v11';
+const ROOM_STORAGE_KEY = 'eleon-rooms-v11';
+const MONTHS = ['Ιανουάριος','Φεβρουάριος','Μάρτιος','Απρίλιος','Μάιος','Ιούνιος','Ιούλιος','Αύγουστος','Σεπτέμβριος','Οκτώβριος','Νοέμβριος','Δεκέμβριος'];
+const MONTH_SHORT = ['ΙΑΝ','ΦΕΒ','ΜΑΡ','ΑΠΡ','ΜΑΙ','ΙΟΥΝ','ΙΟΥΛ','ΑΥΓ','ΣΕΠ','ΟΚΤ','ΝΟΕ','ΔΕΚ'];
+const WEEKDAY_SHORT = ['ΚΥ','ΔΕ','ΤΡ','ΤΕ','ΠΕ','ΠΑ','ΣΑ'];
+const FULL_WEEKDAYS = ['Κυριακή','Δευτέρα','Τρίτη','Τετάρτη','Πέμπτη','Παρασκευή','Σάββατο'];
 
-Κατάσταση εξόφλησης
-                Εκκρεμεί
-                Μερική πληρωμή
-                Εξοφλημένο
-              
-Σχόλια
-Αποθήκευση
-Καθαρισμός
-Κρατήσεις ημέρας
+function defaultRooms() {
+  return [
+    { id: crypto.randomUUID(), name: 'Μικρό δωμάτιο', color: '#2563eb' },
+    { id: crypto.randomUUID(), name: 'Μεγάλο δωμάτιο', color: '#16a34a' }
+  ];
+}
 
-Όλες οι κρατήσεις
-Τα δεδομένα αποθηκεύονται στη συσκευή σου.
+function loadRooms() {
+  try {
+    const raw = JSON.parse(localStorage.getItem(ROOM_STORAGE_KEY) || 'null');
+    if (!Array.isArray(raw) || !raw.length) return defaultRooms();
+    return raw.map(r => ({
+      id: r.id || crypto.randomUUID(),
+      name: r.name || 'Δωμάτιο',
+      color: /^#[0-9a-fA-F]{6}$/.test(r.color || '') ? r.color : '#2563eb'
+    }));
+  } catch {
+    return defaultRooms();
+  }
+}
+
+let rooms = loadRooms();
+let bookings = loadBookings();
+let currentMonth = new Date();
+currentMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
+let selectedStart = new Date();
+let selectedEnd = new Date();
+let editingId = null;
+let editingRoomId = null;
+let pendingRangeStart = null;
+
+const monthLabel = document.getElementById('monthLabel');
+const calendarEl = document.getElementById('calendar');
+const legendEl = document.getElementById('legend');
+const selectedDateLabel = document.getElementById('selectedDateLabel');
+const bookingListEl = document.getElementById('bookingList');
+const dayBookingTitleEl = document.getElementById('dayBookingTitle');
+const dayBookingListEl = document.getElementById('dayBookingList');
+const bookingForm = document.getElementById('bookingForm');
+const deleteBtn = document.getElementById('deleteBtn');
+const clearBtn = document.getElementById('clearBtn');
+const roomSelect = document.getElementById('room');
+const roomListEl = document.getElementById('roomList');
+const roomForm = document.getElementById('roomForm');
+const clearRoomBtn = document.getElementById('clearRoomBtn');
+const deleteRoomBtn = document.getElementById('deleteRoomBtn');
+
+function saveRooms() { localStorage.setItem(ROOM_STORAGE_KEY, JSON.stringify(rooms)); }
+function saveBookings() { localStorage.setItem(BOOKING_STORAGE_KEY, JSON.stringify(bookings)); }
+
+function toISODate(date) {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+function parseISODate(str) {
+  const [y,m,d] = str.split('-').map(Number);
+  return new Date(y, m - 1, d, 12, 0, 0);
+}
+function startOfDay(date) { return new Date(date.getFullYear(), date.getMonth(), date.getDate(), 12, 0, 0); }
+function addDays(date, days) { const d = new Date(date); d.setDate(d.getDate() + days); return d; }
+function compareDates(a,b) { return startOfDay(a).getTime() - startOfDay(b).getTime(); }
+function datesEqual(a,b) { return compareDates(a,b) === 0; }
+function inRange(date, start, end) { return compareDates(date, start) >= 0 && compareDates(date, end) <= 0; }
+function overlaps(aStart, aEnd, bStart, bEnd) { return !(aEnd < bStart || aStart > bEnd); }
+function roomById(id) { return rooms.find(r => r.id === id); }
+function roomName(id) { return roomById(id)?.name || 'Δωμάτιο'; }
+function roomColor(id) { return roomById(id)?.color || '#2563eb'; }
+function normalizeColor(hex) { return /^#[0-9a-fA-F]{6}$/.test(hex || '') ? hex : '#2563eb'; }
+function lightenColor(hex, alpha = 0.12) {
+  const c = hex.replace('#', '');
+  const r = parseInt(c.slice(0,2), 16);
+  const g = parseInt(c.slice(2,4), 16);
+  const b = parseInt(c.slice(4,6), 16);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+function formatLong(date) { return `${FULL_WEEKDAYS[date.getDay()]} ${date.getDate()} ${MONTHS[date.getMonth()]} ${date.getFullYear()}`; }
+
+function loadBookings() {
+  try {
+    const raw = JSON.parse(localStorage.getItem(BOOKING_STORAGE_KEY) || '[]');
+    const fallbackByName = { 'Μικρό δωμάτιο': rooms[0]?.id, 'Μεγάλο δωμάτιο': rooms[1]?.id, 'Μεγάλο διαμέρισμα': rooms[1]?.id };
+    return raw.map(b => ({
+      id: b.id || crypto.randomUUID(),
+      roomId: b.roomId || fallbackByName[b.room] || rooms[0]?.id,
+      guest: b.guest || '',
+      phone: b.phone || '',
+      arrivalTime: b.arrivalTime || '',
+      departureTime: b.departureTime || '',
+      price: b.price || '',
+      deposit: b.deposit || '',
+      paymentStatus: b.paymentStatus || 'Εκκρεμεί',
+      notes: b.notes || '',
+      start: b.start || b.date || toISODate(new Date()),
+      end: b.end || b.date || toISODate(new Date())
+    })).filter(b => b.roomId);
+  } catch {
+    return [];
+  }
+}
+
+function ensureValidRoomSelection() {
+  if (!rooms.length) {
+    rooms = defaultRooms();
+    saveRooms();
+  }
+  const roomIds = new Set(rooms.map(r => r.id));
+  bookings = bookings.filter(b => roomIds.has(b.roomId));
+}
+
+function renderRoomOptions() {
+  roomSelect.innerHTML = '';
+  rooms.forEach(r => {
+    const option = document.createElement('option');
+    option.value = r.id;
+    option.textContent = r.name;
+    roomSelect.appendChild(option);
+  });
+}
+
+function renderLegend() {
+  if (!rooms.length) {
+    legendEl.innerHTML = '';
+    return;
+  }
+  legendEl.innerHTML = '';
+  rooms.forEach(r => {
+    const item = document.createElement('div');
+    item.className = 'legend-item';
+    item.innerHTML = `<span class="dot" style="background:${r.color}"></span> ${r.name}`;
+    legendEl.appendChild(item);
+  });
+}
+
+function buildMonthGrid(date) {
+  const first = new Date(date.getFullYear(), date.getMonth(), 1);
+  const last = new Date(date.getFullYear(), date.getMonth() + 1, 0);
+  const startOffset = (first.getDay() + 6) % 7;
+  const days = [];
+  for (let i = 0; i < startOffset; i++) days.push(addDays(first, -(startOffset - i)));
+  for (let d = 1; d <= last.getDate(); d++) days.push(new Date(date.getFullYear(), date.getMonth(), d, 12, 0, 0));
+  while (days.length % 7 !== 0) days.push(addDays(days[days.length - 1], 1));
+  while (days.length < 42) days.push(addDays(days[days.length - 1], 1));
+  return days;
+}
+
+function getRoomsBookedOn(date) {
+  const iso = toISODate(date);
+  const ids = [];
+  bookings.forEach(b => {
+    if (iso >= b.start && iso <= b.end && roomById(b.roomId)) ids.push(b.roomId);
+  });
+  return [...new Set(ids)];
+}
+
+function updateSelectedDateLabel() {
+  selectedDateLabel.textContent = datesEqual(selectedStart, selectedEnd)
+    ? formatLong(selectedStart)
+    : `${formatLong(selectedStart)} έως ${formatLong(selectedEnd)}`;
+}
+
+function renderCalendar() {
+  monthLabel.textContent = `${MONTHS[currentMonth.getMonth()]} ${currentMonth.getFullYear()}`;
+  calendarEl.innerHTML = '';
+  buildMonthGrid(currentMonth).forEach(date => {
+    const bookedRooms = getRoomsBookedOn(date);
+    const isMuted = date.getMonth() !== currentMonth.getMonth();
+    const day = document.createElement('button');
+    day.type = 'button';
+    day.className = 'day';
+    if (isMuted) day.classList.add('muted');
+    if (datesEqual(startOfDay(new Date()), date)) day.classList.add('today');
+    if (inRange(date, selectedStart, selectedEnd)) day.classList.add('selected-range');
+    if (bookedRooms.length > 0) day.classList.add('booked');
+    if (bookedRooms.length === 1) day.style.background = lightenColor(roomColor(bookedRooms[0]), 0.12);
+    if (bookedRooms.length === rooms.length && rooms.length > 0) day.style.borderColor = roomColor(bookedRooms[0]);
+    const bars = bookedRooms.slice(0,4).map(id => `<span class="booking-bar" style="background:${roomColor(id)}"></span>`).join('');
+    day.innerHTML = `
+      <div class="day-content">
+        <div class="month-short">${MONTH_SHORT[date.getMonth()]}</div>
+        <div class="date-num">${date.getDate()}</div>
+        <div class="weekday-short">${WEEKDAY_SHORT[date.getDay()]}</div>
+      </div>
+      <div class="booking-bars">${bars}</div>`;
+    day.addEventListener('click', () => onDayTap(date));
+    calendarEl.appendChild(day);
+  });
+}
+
+function onDayTap(date) {
+  if (!pendingRangeStart || (selectedStart && !datesEqual(selectedStart, selectedEnd) && editingId === null)) {
+    pendingRangeStart = startOfDay(date);
+    selectedStart = startOfDay(date);
+    selectedEnd = startOfDay(date);
+  } else {
+    const a = pendingRangeStart;
+    const b = startOfDay(date);
+    selectedStart = compareDates(a,b) <= 0 ? a : b;
+    selectedEnd = compareDates(a,b) <= 0 ? b : a;
+    pendingRangeStart = null;
+  }
+  editingId = null;
+  document.getElementById('bookingId').value = '';
+  deleteBtn.style.display = 'none';
+  updateSelectedDateLabel();
+  renderCalendar();
+  renderDayBookings();
+}
+
+function resetBookingForm() {
+  bookingForm.reset();
+  renderRoomOptions();
+  roomSelect.value = rooms[0]?.id || '';
+  document.getElementById('paymentStatus').value = 'Εκκρεμεί';
+  editingId = null;
+  document.getElementById('bookingId').value = '';
+  deleteBtn.style.display = 'none';
+}
+
+function resetRoomForm() {
+  roomForm.reset();
+  document.getElementById('roomId').value = '';
+  document.getElementById('roomColorInput').value = '#2563eb';
+  editingRoomId = null;
+  deleteRoomBtn.style.display = 'none';
+}
+
+
+function getBookingsForDate(date) {
+  const iso = toISODate(date);
+  return bookings
+    .filter(b => iso >= b.start && iso <= b.end && roomById(b.roomId))
+    .sort((a,b) => {
+      const roomCompare = roomName(a.roomId).localeCompare(roomName(b.roomId), 'el');
+      if (roomCompare !== 0) return roomCompare;
+      return (a.guest || '').localeCompare((b.guest || ''), 'el');
+    });
+}
+
+function renderDayBookings() {
+  const targetDate = selectedStart;
+  dayBookingTitleEl.textContent = formatLong(targetDate);
+  const items = getBookingsForDate(targetDate);
+  if (!items.length) {
+    dayBookingListEl.innerHTML = '<div class="empty">Δεν υπάρχουν κρατήσεις για αυτή την ημέρα.</div>';
+    return;
+  }
+  dayBookingListEl.innerHTML = '';
+  items.forEach(b => {
+    const item = document.createElement('div');
+    item.className = 'booking-item';
+    item.innerHTML = `
+      <div class="booking-top">
+        <div>
+          <div class="booking-room">${roomName(b.roomId)}</div>
+          <div class="booking-name">${b.guest || 'Χωρίς όνομα'}</div>
+        </div>
+        <div class="badge" style="background:${lightenColor(roomColor(b.roomId), .18)}; border:1px solid ${roomColor(b.roomId)};">${roomName(b.roomId)}</div>
+      </div>
+      <div class="small-text"><strong>${b.start === b.end ? formatLong(parseISODate(b.start)) : `${formatLong(parseISODate(b.start))} έως ${formatLong(parseISODate(b.end))}`}</strong></div>
+      <div class="small-text">Τηλέφωνο: ${b.phone || '-'}</div>
+      <div class="small-text">Άφιξη: ${b.arrivalTime || '-'} • Αναχώρηση: ${b.departureTime || '-'}</div>
+      <div class="small-text">Τιμή: ${b.price || '-'} € • Προκαταβολή: ${b.deposit || '-'} € • ${b.paymentStatus || ''}</div>
+      <div class="small-text">Σχόλια: ${b.notes || '-'}</div>
+      <div class="actions" style="margin-top:10px;">
+        <button type="button" class="btn secondary small" data-edit-day="${b.id}">Επεξεργασία</button>
+      </div>`;
+    item.querySelector('[data-edit-day]').addEventListener('click', () => loadBookingIntoForm(b.id));
+    dayBookingListEl.appendChild(item);
+  });
+}
+
+function renderBookings() {
+  if (!bookings.length) {
+    bookingListEl.innerHTML = '<div class="empty">Δεν υπάρχουν κρατήσεις ακόμα.</div>';
+    return;
+  }
+  const sorted = [...bookings].sort((a,b) => a.start.localeCompare(b.start));
+  bookingListEl.innerHTML = '';
+  sorted.forEach(b => {
+    const item = document.createElement('div');
+    item.className = 'booking-item';
+    item.innerHTML = `
+      <div class="booking-top">
+        <div>
+          <div class="booking-room">${roomName(b.roomId)}</div>
+          <div class="booking-name">${b.guest || 'Χωρίς όνομα'}</div>
+        </div>
+        <div class="badge" style="background:${lightenColor(roomColor(b.roomId), .18)}; border:1px solid ${roomColor(b.roomId)};">${roomName(b.roomId)}</div>
+      </div>
+      <div class="small-text"><strong>${b.start === b.end ? formatLong(parseISODate(b.start)) : `${formatLong(parseISODate(b.start))} έως ${formatLong(parseISODate(b.end))}`}</strong></div>
+      <div class="small-text">Τηλέφωνο: ${b.phone || '-'}</div>
+      <div class="small-text">Άφιξη: ${b.arrivalTime || '-'} • Αναχώρηση: ${b.departureTime || '-'}</div>
+      <div class="small-text">Τιμή: ${b.price || '-'} € • Προκαταβολή: ${b.deposit || '-'} € • ${b.paymentStatus || ''}</div>
+      <div class="small-text">Σχόλια: ${b.notes || '-'}</div>
+      <div class="actions" style="margin-top:10px;">
+        <button type="button" class="btn secondary small" data-edit="${b.id}">Επεξεργασία</button>
+      </div>`;
+    item.querySelector('[data-edit]').addEventListener('click', () => loadBookingIntoForm(b.id));
+    bookingListEl.appendChild(item);
+  });
+}
+
+function renderRooms() {
+  if (!rooms.length) {
+    roomListEl.innerHTML = '<div class="empty">Δεν υπάρχουν δωμάτια.</div>';
+    return;
+  }
+  roomListEl.innerHTML = '';
+  rooms.forEach(r => {
+    const count = bookings.filter(b => b.roomId === r.id).length;
+    const item = document.createElement('div');
+    item.className = 'room-item';
+    item.innerHTML = `
+      <div class="room-top">
+        <div>
+          <div class="room-name">${r.name}</div>
+          <div class="room-meta">${count} κρατήσεις</div>
+        </div>
+        <div class="badge" style="background:${lightenColor(r.color, .18)}; border:1px solid ${r.color};">${r.color}</div>
+      </div>
+      <div class="actions" style="margin-top:10px;">
+        <button type="button" class="btn secondary small" data-edit-room="${r.id}">Αλλαγή</button>
+      </div>`;
+    item.querySelector('[data-edit-room]').addEventListener('click', () => loadRoomIntoForm(r.id));
+    roomListEl.appendChild(item);
+  });
+}
+
+function loadBookingIntoForm(id) {
+  const b = bookings.find(x => x.id === id);
+  if (!b) return;
+  editingId = id;
+  document.getElementById('bookingId').value = id;
+  roomSelect.value = b.roomId;
+  document.getElementById('guest').value = b.guest;
+  document.getElementById('phone').value = b.phone;
+  document.getElementById('arrivalTime').value = b.arrivalTime;
+  document.getElementById('departureTime').value = b.departureTime;
+  document.getElementById('price').value = b.price;
+  document.getElementById('deposit').value = b.deposit;
+  document.getElementById('paymentStatus').value = b.paymentStatus;
+  document.getElementById('notes').value = b.notes;
+  selectedStart = parseISODate(b.start);
+  selectedEnd = parseISODate(b.end);
+  pendingRangeStart = null;
+  updateSelectedDateLabel();
+  renderCalendar();
+  renderDayBookings();
+  deleteBtn.style.display = 'inline-flex';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function loadRoomIntoForm(id) {
+  const r = roomById(id);
+  if (!r) return;
+  editingRoomId = id;
+  document.getElementById('roomId').value = id;
+  document.getElementById('roomNameInput').value = r.name;
+  document.getElementById('roomColorInput').value = normalizeColor(r.color);
+  deleteRoomBtn.style.display = 'inline-flex';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+roomForm.addEventListener('submit', (e) => {
+  e.preventDefault();
+  const name = document.getElementById('roomNameInput').value.trim();
+  const color = normalizeColor(document.getElementById('roomColorInput').value);
+  if (!name) return;
+  const duplicate = rooms.some(r => r.name.toLowerCase() === name.toLowerCase() && r.id !== editingRoomId);
+  if (duplicate) {
+    alert('Υπάρχει ήδη δωμάτιο με αυτό το όνομα.');
+    return;
+  }
+  if (editingRoomId) {
+    rooms = rooms.map(r => r.id === editingRoomId ? { ...r, name, color } : r);
+  } else {
+    rooms.push({ id: crypto.randomUUID(), name, color });
+  }
+  saveRooms();
+  renderRoomOptions();
+  renderLegend();
+  renderRooms();
+  renderBookings();
+  renderCalendar();
+  renderDayBookings();
+  resetRoomForm();
+  if (!editingId) roomSelect.value = rooms[rooms.length - 1]?.id || rooms[0]?.id || '';
+});
+
+clearRoomBtn.addEventListener('click', resetRoomForm);
+deleteRoomBtn.addEventListener('click', () => {
+  if (!editingRoomId) return;
+  const hasBookings = bookings.some(b => b.roomId === editingRoomId);
+  if (hasBookings) {
+    alert('Δεν μπορείς να διαγράψεις δωμάτιο που έχει κρατήσεις. Διέγραψε πρώτα τις κρατήσεις του ή άλλαξέ τες σε άλλο δωμάτιο.');
+    return;
+  }
+  if (!confirm('Να διαγραφεί το δωμάτιο;')) return;
+  rooms = rooms.filter(r => r.id !== editingRoomId);
+  if (!rooms.length) rooms = defaultRooms();
+  saveRooms();
+  renderRoomOptions();
+  renderLegend();
+  renderRooms();
+  renderCalendar();
+  renderDayBookings();
+  resetRoomForm();
+  roomSelect.value = rooms[0]?.id || '';
+});
+
+bookingForm.addEventListener('submit', (e) => {
+  e.preventDefault();
+  if (!rooms.length) {
+    alert('Βάλε πρώτα τουλάχιστον ένα δωμάτιο.');
+    return;
+  }
+  const booking = {
+    id: editingId || crypto.randomUUID(),
+    roomId: roomSelect.value,
+    guest: document.getElementById('guest').value.trim(),
+    phone: document.getElementById('phone').value.trim(),
+    arrivalTime: document.getElementById('arrivalTime').value,
+    departureTime: document.getElementById('departureTime').value,
+    price: document.getElementById('price').value,
+    deposit: document.getElementById('deposit').value,
+    paymentStatus: document.getElementById('paymentStatus').value,
+    notes: document.getElementById('notes').value.trim(),
+    start: toISODate(selectedStart),
+    end: toISODate(selectedEnd)
+  };
+  const conflict = bookings.some(b => b.roomId === booking.roomId && b.id !== booking.id && overlaps(booking.start, booking.end, b.start, b.end));
+  if (conflict) {
+    alert('Υπάρχει ήδη κράτηση στο ίδιο δωμάτιο μέσα σε αυτές τις μέρες.');
+    return;
+  }
+  if (editingId) bookings = bookings.map(b => b.id === editingId ? booking : b);
+  else bookings.push(booking);
+  saveBookings();
+  resetBookingForm();
+  renderCalendar();
+  renderBookings();
+  renderDayBookings();
+  renderRooms();
+});
+
+deleteBtn.addEventListener('click', () => {
+  if (!editingId) return;
+  if (!confirm('Να διαγραφεί η κράτηση;')) return;
+  bookings = bookings.filter(b => b.id !== editingId);
+  saveBookings();
+  resetBookingForm();
+  renderCalendar();
+  renderBookings();
+  renderDayBookings();
+  renderRooms();
+});
+clearBtn.addEventListener('click', resetBookingForm);
+document.getElementById('prevMonth').addEventListener('click', () => { currentMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1); renderCalendar(); });
+document.getElementById('nextMonth').addEventListener('click', () => { currentMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1); renderCalendar(); });
+
+ensureValidRoomSelection();
+saveRooms();
+saveBookings();
+updateSelectedDateLabel();
+renderRoomOptions();
+resetBookingForm();
+renderLegend();
+renderRooms();
+renderCalendar();
+renderBookings();
+renderDayBookings();
+resetRoomForm();
+</script>
+</body>
+</html>
