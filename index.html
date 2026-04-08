@@ -240,6 +240,7 @@
       margin-bottom: 8px;
     }
     .help-text { color: var(--muted); font-size: 13px; margin: -2px 0 8px; }
+    .edit-notice { display:none; margin: 0 0 12px; padding: 10px 12px; border:1px solid #bfdbfe; background:#eff6ff; color:#1d4ed8; border-radius: 12px; font-size:13px; font-weight:700; }
     .actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 6px; }
     .booking-list { display: grid; gap: 10px; }
     .booking-item {
@@ -336,7 +337,8 @@
         </section>
 
         <section class="card">
-          <div class="section-title">Νέα / Επεξεργασία κράτησης</div>
+          <div class="section-title" id="bookingFormTitle">Νέα κράτηση</div>
+          <div id="editNotice" class="edit-notice">Βρίσκεσαι σε επεξεργασία κράτησης.</div>
           <div id="selectedDateLabel" class="selected-date"></div>
           <div class="help-text">Πάτησε όσες ημέρες θέλεις μία-μία και μετά αποθήκευσε την κράτηση.</div>
           <form id="bookingForm" class="form-grid">
@@ -368,8 +370,8 @@
             </label>
             <div id="conflictBox" class="conflict-box"></div>
             <div class="actions">
-              <button class="btn" type="submit">Αποθήκευση</button>
-              <button class="btn secondary" id="clearForm" type="button">Καθαρισμός</button>
+              <button class="btn" id="saveBookingBtn" type="submit">Αποθήκευση</button>
+              <button class="btn secondary" id="clearForm" type="button">Ακύρωση / Καθαρισμός</button>
             </div>
           </form>
         </section>
@@ -418,6 +420,10 @@
     const paymentStatus = document.getElementById('paymentStatus');
     const notes = document.getElementById('notes');
     const conflictBox = document.getElementById('conflictBox');
+    const bookingFormTitle = document.getElementById('bookingFormTitle');
+    const saveBookingBtn = document.getElementById('saveBookingBtn');
+    const editNotice = document.getElementById('editNotice');
+    let editingBookingId = null;
     const roomList = document.getElementById('roomList');
     const newRoomName = document.getElementById('newRoomName');
     const newRoomColor = document.getElementById('newRoomColor');
@@ -739,12 +745,20 @@
       return bookings.find(b => b.roomId === record.roomId && b.id !== record.id && b.dates.some(d => record.dates.includes(d)));
     }
 
+    function setEditingMode(isEditing) {
+      bookingFormTitle.textContent = isEditing ? 'Επεξεργασία κράτησης' : 'Νέα κράτηση';
+      saveBookingBtn.textContent = isEditing ? 'Αποθήκευση αλλαγών' : 'Αποθήκευση';
+      if (editNotice) editNotice.style.display = isEditing ? 'block' : 'none';
+    }
+
     function clearForm() {
       bookingId.value = '';
       bookingId.dataset.roomId = '';
+      editingBookingId = null;
       clearConflict();
       bookingForm.reset();
       paymentStatus.value = 'Δεν εξοφλήθηκε';
+      setEditingMode(false);
       selectedDates = [];
       currentMonth = new Date(today.getFullYear(), today.getMonth(), 1);
       roomSelect.dataset.pendingValue = rooms[0]?.id || '';
@@ -758,23 +772,26 @@
       const b = bookings.find(x => x.id === id);
       if (!b) return;
       clearConflict();
+      setEditingMode(true);
+      editingBookingId = b.id;
       bookingId.value = b.id;
       bookingId.dataset.roomId = b.roomId;
       selectedDates = uniqSortedDates(b.dates);
       roomSelect.dataset.pendingValue = b.roomId;
+      const first = fromISODate(selectedDates[0]);
+      currentMonth = new Date(first.getFullYear(), first.getMonth(), 1);
+      renderMonthYearOptions();
       renderRooms();
+      roomSelect.value = b.roomId;
       guest.value = b.guest || '';
       phone.value = b.phone || '';
       price.value = b.price || '';
       deposit.value = b.deposit || '';
       paymentStatus.value = b.paymentStatus || 'Δεν εξοφλήθηκε';
       notes.value = b.notes || '';
-      const first = fromISODate(selectedDates[0]);
-      currentMonth = new Date(first.getFullYear(), first.getMonth(), 1);
-      renderMonthYearOptions();
       renderCalendar();
       renderBookingsForSelectedDate();
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      bookingForm.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
 
     function removeBooking(id) {
@@ -791,7 +808,7 @@
     bookingForm.addEventListener('submit', (e) => {
       e.preventDefault();
       const record = {
-        id: bookingId.value || `b_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+        id: editingBookingId || bookingId.value || `b_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
         dates: uniqSortedDates(selectedDates),
         roomId: roomSelect.value,
         guest: guest.value.trim(),
@@ -823,12 +840,13 @@
       }
 
       clearConflict();
+      const wasEditing = !!editingBookingId;
       const existingIndex = bookings.findIndex(x => x.id === record.id);
       if (existingIndex >= 0) bookings[existingIndex] = record;
       else bookings.push(record);
       saveBookings();
       clearForm();
-      alert('Η κράτηση αποθηκεύτηκε.');
+      alert(wasEditing ? 'Οι αλλαγές αποθηκεύτηκαν.' : 'Η κράτηση αποθηκεύτηκε.');
     });
 
     document.getElementById('addRoomBtn').onclick = () => {
@@ -910,7 +928,9 @@
     renderRooms();
     renderCalendar();
     renderBookingsForSelectedDate();
+    setEditingMode(false);
     paymentStatus.value = 'Δεν εξοφλήθηκε';
+    setEditingMode(false);
     if (rooms[0]) roomSelect.value = rooms[0].id;
   </script>
 </body>

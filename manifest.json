@@ -1,11 +1,11 @@
 {
   "name": "Κρατήσεις Δωματίων",
   "short_name": "Κρατήσεις",
+  "lang": "el",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#f4f7fb",
   "theme_color": "#0f766e",
-  "lang": "el",
   "icons": [
     {
       "src": "icon-192.png",
